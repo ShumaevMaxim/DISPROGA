@@ -1,0 +1,194 @@
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include <limits>
+
+using namespace std;
+
+const int INF = numeric_limits<int>::max();
+
+void printMatrix(const vector<vector<int>>& matrix) {
+    for (const auto& row : matrix) {
+        for (int element : row) {
+            cout << setw(3) << element << " | ";
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+void printMatrixF(const vector<vector<char>>& matrix) {
+    for (const auto& row : matrix) {
+        for (int element : row) {
+            cout << setw(3) << element << " | ";
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+// Функция для нахождения минимального элемента в матрице
+int findMin(const vector<vector<int>>& matrix, const vector<bool>& rowCovered, const vector<bool>& colCovered) {
+    int minVal = INF;
+    for (int i = 0; i < matrix.size(); i++) {
+        if (!rowCovered[i]) {
+            for (int j = 0; j < matrix[i].size(); j++) {
+                if (!colCovered[j] && matrix[i][j] < minVal) {
+                    minVal = matrix[i][j];
+                }
+            }
+        }
+    }
+    return minVal;
+}
+
+// Функция для проверки, все ли строки покрыты
+bool allRowsCovered(const vector<bool>& rowCovered) {
+    for (bool row : rowCovered) {
+        if (!row) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Функция для поиска невыделенной ячейки с наименьшей стоимостью
+pair<int, int> findUnassignedCell(const vector<vector<int>>& matrix, const vector<bool>& rowCovered, const vector<bool>& colCovered) {
+    int minVal = INF;
+    pair<int, int> unassignedCell;
+    for (int i = 0; i < matrix.size(); i++) {
+        if (!rowCovered[i]) {
+            for (int j = 0; j < matrix[i].size(); j++) {
+                if (!colCovered[j] && matrix[i][j] < minVal) {
+                    minVal = matrix[i][j];
+                    unassignedCell = make_pair(i, j);
+                }
+            }
+        }
+    }
+    return unassignedCell;
+}
+
+// Функция для поиска назначения среди выделенных ячеек
+int findAssignment(const vector<pair<int, int>>& assignments, int row) {
+    for (const auto& assignment : assignments) {
+        if (assignment.first == row) {
+            return assignment.second;
+        }
+    }
+    return -1;
+}
+
+// Функция для выполнения метода Мака
+vector<pair<int, int>> munkres(const vector<vector<int>>& matrix) {
+    int n = matrix.size();
+    int m = matrix[0].size();
+
+    vector<bool> rowCovered(n, false);
+    vector<bool> colCovered(m, false);
+    vector<pair<int, int>> assignments;
+
+    while (!allRowsCovered(rowCovered)) {
+        int minVal = findMin(matrix, rowCovered, colCovered);
+
+        // Покрытие нулевых элементов
+        for (int i = 0; i < n; i++) {
+            if (!rowCovered[i]) {
+                for (int j = 0; j < m; j++) {
+                    if (!colCovered[j] && matrix[i][j] == minVal) {
+                        rowCovered[i] = true;
+                        colCovered[j] = true;
+                        assignments.push_back(make_pair(i, j));
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Проверка наличия назначений для каждой строки
+        for (int i = 0; i < n; i++) {
+            if (!rowCovered[i]) {
+                int assignmentCol = findAssignment(assignments, i);
+                if (assignmentCol != -1) {
+                    colCovered[assignmentCol] = false;
+                }
+            }
+        }
+    }
+
+    return assignments;
+}
+
+int main() {
+    setlocale(LC_ALL, "Russian");
+    /*vector<vector<int>> matrix = {
+        {3, 5, 7, 6, 7},
+        {7, 10, 9, 5, 6},
+        {6, 1, 5, 4, 5},
+        {2, 3, 6, 7, 1},
+        {11, 14, 11, 12, 10}
+    };*/
+
+
+
+    cout << "Введите кол-во рабочих и назначений: ";
+    int n;
+    cin >> n;
+    int m = n;
+    cout << "Введите схему(матрицу): " << endl;
+    vector<vector<int>> matrix(n, vector<int>(m));
+    
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            cin>>matrix[i][j];
+           
+        }
+    }
+    cout << endl;
+
+
+
+
+    vector<vector<char>> matrix_F(matrix.size(), vector<char>(matrix[0].size()));
+    for (int i = 0; i < matrix.size(); i++) {
+        for (int j = 0; j < matrix[i].size(); j++) {
+            matrix_F[i][j] = static_cast<char>(matrix[i][j]);
+        }
+    }
+
+    printMatrix(matrix);
+
+    vector<pair<int, int>> assignments = munkres(matrix);
+    vector<int> temp1(matrix.size());
+    vector<int> temp2(matrix.size());
+    int i = 0;
+    int F = 0;
+    cout << "Назначения:" << endl;
+    for (const auto& assignment : assignments) {
+        cout << "   |Строка " << assignment.first + 1 << " -> Столбец " << assignment.second + 1 <<"|   Значение: " << matrix[assignment.first][assignment.second] << endl;
+        F += matrix[assignment.first][assignment.second];
+
+        
+        matrix_F[assignment.first][assignment.second] = 0;
+
+
+        /*temp1[i] = assignment.first;
+        temp2[i] = assignment.second;
+        i++;*/
+    }
+    /*for (int i = 0; i < matrix.size(); i++) {
+        cout << temp1[i] << " " << temp2[i] << endl;
+    }*/
+
+    /*for (int i = 0; i < matrix.size(); i++) {
+            matrix_F[temp1[i]][temp2[i]] = 0;
+    }*/
+
+    cout << endl;
+    printMatrixF(matrix_F);
+
+    cout << endl << "F*(x) = " << F << endl;
+    cin.get();
+    cin.get();
+    return 0;
+}
